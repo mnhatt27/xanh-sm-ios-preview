@@ -20,9 +20,15 @@ struct LogEntry: Identifiable {
     let message: String
 }
 
+struct AppNotice: Identifiable {
+    let id = UUID()
+    let message: String
+}
+
 @MainActor final class ServiceStore: ObservableObject {
     @Published var configuration: Configuration
     @Published var logs: [LogEntry] = []
+    @Published var notice: AppNotice?
     private static let storageKey = "xanhsm.configuration.v1"
 
     init() {
@@ -32,8 +38,8 @@ struct LogEntry: Identifiable {
             .flatMap { try? Data(contentsOf: $0) }
             .flatMap { try? JSONDecoder().decode(Configuration.self, from: $0) }
         configuration = saved ?? bundled ?? Configuration(
-            app_title: "By Minh Nhat", version: "v2.0 Modern Edition", services: [])
-        log("🚀 Giao diện đã sẵn sàng.")
+            app_title: "Mystic XanhSM", version: "v1.1", services: [])
+        log("Đợi inject.")
         if saved == nil && bundled == nil { log("Không đọc được cấu hình dịch vụ.") }
     }
 
@@ -57,7 +63,12 @@ struct LogEntry: Identifiable {
             let data = try JSONEncoder().encode(configuration)
             UserDefaults.standard.set(data, forKey: Self.storageKey)
             log("💾 Đã lưu cấu hình trên thiết bị.")
-        } catch { log("Không lưu được cấu hình: \(error.localizedDescription)") }
+            notice = AppNotice(message: "Đã lưu thành công")
+        } catch {
+            let message = "Không lưu được cấu hình: \(error.localizedDescription)"
+            log(message)
+            notice = AppNotice(message: message)
+        }
     }
 
     func log(_ message: String) {
@@ -82,11 +93,14 @@ private enum Theme {
 
 struct ContentView: View {
     @StateObject private var store = ServiceStore()
+    @State private var isInjecting = false
+    @State private var isReady = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+                injectButton
                 HStack {
                     Text("Đang hoạt động: \(store.activeCount)/\(store.configuration.services.count) dịch vụ")
                         .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.blue)
@@ -103,17 +117,37 @@ struct ContentView: View {
                     serviceCard(service)
                 }
                 console
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Thiết kế giao diện hiện đại • By Minh Nhat")
-                    Text("Xanh SM Edition 2026 · \(store.configuration.version)")
-                        .foregroundStyle(Theme.blue)
-                    Text("Bản xem giao diện • Trạng thái chỉ lưu trên thiết bị")
-                }
-                .font(.caption).foregroundStyle(Theme.muted)
             }
             .padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
         }
         .background(Theme.background).tint(Theme.blue)
+        .overlay {
+            if isInjecting {
+                ZStack {
+                    Color.black.opacity(0.6).ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        ProgressView().tint(Theme.blue).scaleEffect(1.3)
+                        Text("Đang Inject...").font(.headline)
+                        Text("Green SM Driver").font(.subheadline).foregroundStyle(Theme.muted)
+                    }
+                    .padding(32).background(Theme.card, in: RoundedRectangle(cornerRadius: 20))
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+        .task(id: isInjecting) {
+            guard isInjecting else { return }
+            do { try await Task.sleep(nanoseconds: 5_000_000_000) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            isReady = true
+            isInjecting = false
+            store.log("Inject thành công. Sẵn sàng.")
+            store.notice = AppNotice(message: "Inject thành công")
+        }
+        .alert(item: $store.notice) { notice in
+            Alert(title: Text("Mystic XanhSM"), message: Text(notice.message), dismissButton: .default(Text("OK")))
+        }
     }
 
     private var header: some View {
@@ -121,13 +155,33 @@ struct ContentView: View {
             Text("CONTROL CENTER").font(.caption2.bold()).tracking(2)
                 .foregroundStyle(Theme.blue).padding(.horizontal, 10).padding(.vertical, 6)
                 .background(Theme.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
-            Text(store.configuration.app_title).font(.largeTitle.bold())
+            Text("Mystic XanhSM").font(.largeTitle.bold())
             Text("Quản lý & Điều phối Dịch vụ Thông minh")
                 .font(.subheadline).foregroundStyle(Theme.muted)
-            Label("SẴN SÀNG XEM THỬ", systemImage: "circle.fill")
+            Label(isInjecting ? "ĐANG INJECT" : (isReady ? "SẴN SÀNG" : "ĐỢI INJECT"), systemImage: "circle.fill")
                 .font(.caption2.bold()).foregroundStyle(Theme.blue)
                 .padding(.top, 4)
         }.padding(.vertical, 8)
+    }
+
+    private var injectButton: some View {
+        Button {
+            guard !isInjecting else { return }
+            isReady = false
+            isInjecting = true
+            store.log("Đang Inject Green SM Driver...")
+        } label: {
+            VStack(spacing: 4) {
+                Text("Inject").font(.headline)
+                Text("Green SM Driver").font(.headline.bold())
+            }
+            .frame(maxWidth: .infinity, minHeight: 64)
+            .foregroundStyle(Color.white)
+            .background(Theme.blue.opacity(0.65), in: RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .disabled(isInjecting)
+        .accessibilityLabel("Inject Green SM Driver")
     }
 
     @ViewBuilder private var actions: some View {
