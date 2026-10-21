@@ -1,0 +1,41 @@
+{
+    "app_title": "By Minh Nhat",
+    "version": "v2.0 Modern Edition",
+    "services": [
+        {
+            "id": "bike",
+            "name": "Bike",
+            "desc": "Dịch vụ di chuyển xe máy điện tiện lợi & nhanh chóng",
+            "icon": "🛵",
+            "enabled": true
+        },
+        {
+            "id": "express_delivery",
+            "name": "Giao hàng siêu tốc",
+            "desc": "Giao hàng hỏa tốc nội thành trong 30 - 45 phút",
+            "icon": "⚡",
+            "enabled": true
+        },
+        {
+            "id": "saving_delivery",
+            "name": "Giao hàng tiết kiệm 2h-4h",
+            "desc": "Giao hàng theo khung giờ 2h-4h với chi phí tối ưu",
+            "icon": "⏱️",
+            "enabled": false
+        },
+        {
+            "id": "food",
+            "name": "Food",
+            "desc": "Đặt món & giao đồ ăn uống nóng hổi tận nơi",
+            "icon": "🍔",
+            "enabled": true
+        },
+        {
+            "id": "car",
+            "name": "Car / Taxi",
+            "desc": "Dịch vụ ô tô điện 4-7 chỗ êm ái, thân thiện môi trường",
+            "icon": "🚗",
+            "enabled": true
+        }
+    ]
+}
